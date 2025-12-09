@@ -17,7 +17,7 @@ supabase: Client = create_client(SUPABASE_URL, SUPABASE_KEY)
 
 MODEL_PATH = 'best.pt'
 # Load YOLO model
-model = YOLO(MODEL_URL)  # Model standar
+model = YOLO(MODEL_PATH)  # Model standar
 
 # Konfigurasi retry
 MAX_RETRY_COUNT = 3  # Maksimal percobaan ulang untuk failed images
