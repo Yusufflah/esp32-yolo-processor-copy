@@ -1,0 +1,6 @@
+supabase
+requests
+Pillow
+ultralytics
+opencv-python
+numpy
