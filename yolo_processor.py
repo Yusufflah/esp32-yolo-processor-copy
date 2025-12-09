@@ -152,7 +152,7 @@ def process_pending_images_single_class():
     """Process all pending images in the database - khusus untuk single class"""
     try:
         # Fetch pending records
-        response = supabase.table("yolo_processing").select("*").eq("status", "pending, failed").execute()
+        response = supabase.table("yolo_processing").select("*").eq("status", "pending" "failed").execute()
         
         if hasattr(response, 'error') and response.error:
             print(f"Error fetching pending images: {response.error}")
