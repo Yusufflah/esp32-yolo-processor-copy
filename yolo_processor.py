@@ -15,8 +15,12 @@ SUPABASE_URL = os.environ.get("SUPABASE_URL")
 SUPABASE_KEY = os.environ.get("SUPABASE_SERVICE_KEY")  # Use service key for write access
 supabase: Client = create_client(SUPABASE_URL, SUPABASE_KEY)
 
-# Load YOLO model (adjust path as needed)
-model = YOLO('yolov5nu.pt')  # You can use yolov8s.pt, yolov8m.pt, etc.
+# Load YOLO model - GANTI DENGAN MODEL PERSON ONLY
+# Pilih salah satu:
+# 1. Model custom single-class
+# model = YOLO('yolov5_person.pt')  # Model custom hanya person
+# 2. Atau model standar yang akan difilter
+model = YOLO('yolov5nu.pt')  # Model standar, akan difilter nanti
 
 def download_image(image_url):
     """Download image from URL"""
@@ -28,8 +32,11 @@ def download_image(image_url):
         print(f"Error downloading image: {e}")
         return None
 
-def process_image_with_yolo(image):
-    """Process image with YOLO and return annotated image and detection results"""
+def process_image_with_yolo_single_class(image, target_class='person'):
+    """
+    Process image with YOLO and return annotated image and detection results
+    Hanya untuk single class (person)
+    """
     try:
         # Convert PIL Image to OpenCV format
         opencv_image = cv2.cvtColor(np.array(image), cv2.COLOR_RGB2BGR)
@@ -37,23 +44,43 @@ def process_image_with_yolo(image):
         # Run YOLO inference
         results = model(opencv_image)
         
-        # Annotate image with detections
-        annotated_image = results[0].plot()
-        
-        # Convert back to PIL Image
-        annotated_pil = Image.fromarray(cv2.cvtColor(annotated_image, cv2.COLOR_BGR2RGB))
-        
-        # Extract detection information
+        # Filter hanya deteksi 'person' dan buat annotated image khusus
         detections = []
+        
+        # Buat copy dari gambar asli untuk di-annotate
+        annotated_image = opencv_image.copy()
+        
         for result in results:
             boxes = result.boxes
             for box in boxes:
-                detection = {
-                    'class': model.names[int(box.cls)],
-                    'confidence': float(box.conf),
-                    'bbox': box.xyxy[0].tolist()
-                }
-                detections.append(detection)
+                class_id = int(box.cls)
+                class_name = model.names[class_id]
+                confidence = float(box.conf)
+                
+                # Hanya proses jika classnya adalah 'person'
+                if class_name == target_class:
+                    # Extract bounding box
+                    bbox = box.xyxy[0].tolist()
+                    x1, y1, x2, y2 = map(int, bbox)
+                    
+                    # Draw bounding box dengan warna hijau untuk person
+                    cv2.rectangle(annotated_image, (x1, y1), (x2, y2), (0, 255, 0), 2)
+                    
+                    # Add label
+                    label = f"Person: {confidence:.2f}"
+                    cv2.putText(annotated_image, label, (x1, y1-10), 
+                               cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 255, 0), 2)
+                    
+                    # Tambahkan ke detections
+                    detection = {
+                        'class': class_name,
+                        'confidence': confidence,
+                        'bbox': bbox
+                    }
+                    detections.append(detection)
+        
+        # Convert back to PIL Image
+        annotated_pil = Image.fromarray(cv2.cvtColor(annotated_image, cv2.COLOR_BGR2RGB))
         
         return annotated_pil, detections
     except Exception as e:
@@ -82,7 +109,9 @@ def upload_processed_image(image, filename):
         print(f"Error uploading processed image: {e}")
         return None
 
-def update_processing_status(record_id, status, processed_image_url=None, processing_result=None, error_message=None, processing_time=None):
+def update_processing_status(record_id, status, processed_image_url=None, 
+                           processing_result=None, error_message=None, 
+                           processing_time=None, person_count=None):
     """Update processing status in database"""
     try:
         update_data = {
@@ -103,6 +132,9 @@ def update_processing_status(record_id, status, processed_image_url=None, proces
         if processing_time:
             update_data["processing_time"] = processing_time
             
+        if person_count is not None:
+            update_data["person_count"] = person_count
+            
         if status == "completed":
             update_data["processed_at"] = datetime.now().isoformat()
         
@@ -116,8 +148,8 @@ def update_processing_status(record_id, status, processed_image_url=None, proces
         print(f"Error updating processing status: {e}")
         return False
 
-def process_pending_images():
-    """Process all pending images in the database"""
+def process_pending_images_single_class():
+    """Process all pending images in the database - khusus untuk single class"""
     try:
         # Fetch pending records
         response = supabase.table("yolo_processing").select("*").eq("status", "pending").execute()
@@ -128,6 +160,7 @@ def process_pending_images():
         
         pending_records = response.data
         print(f"Found {len(pending_records)} pending images")
+        print(f"Processing only 'person' class detections...")
         
         for record in pending_records:
             record_id = record['id']
@@ -147,8 +180,8 @@ def process_pending_images():
                 if not original_image:
                     raise Exception("Failed to download image")
                 
-                # Process with YOLO
-                processed_image, detections = process_image_with_yolo(original_image)
+                # Process with YOLO - single class version
+                processed_image, detections = process_image_with_yolo_single_class(original_image, target_class='person')
                 if not processed_image:
                     raise Exception("YOLO processing failed")
                 
@@ -158,6 +191,7 @@ def process_pending_images():
                     raise Exception("Failed to upload processed image")
                 
                 processing_time = time.time() - start_time
+                person_count = len(detections)
                 
                 # Update record with results
                 success = update_processing_status(
@@ -165,12 +199,18 @@ def process_pending_images():
                     "completed", 
                     processed_url, 
                     detections,
-                    processing_time=processing_time
+                    processing_time=processing_time,
+                    person_count=person_count
                 )
                 
                 if success:
                     print(f"✓ Successfully processed {filename} in {processing_time:.2f}s")
-                    print(f"  Detections: {len(detections)} objects")
+                    print(f"  Persons detected: {person_count}")
+                    
+                    # Log detail detections jika ada
+                    if detections:
+                        for i, det in enumerate(detections, 1):
+                            print(f"    Person {i}: Confidence {det['confidence']:.2%}")
                 else:
                     print(f"✗ Failed to update database for {filename}")
                     
@@ -189,6 +229,6 @@ def process_pending_images():
         print(f"Error in process_pending_images: {e}")
 
 if __name__ == "__main__":
-    print("Starting YOLO Image Processor...")
-    process_pending_images()
+    print("Starting Single-Class (Person) YOLO Image Processor...")
+    process_pending_images_single_class()
     print("Processing completed!")
