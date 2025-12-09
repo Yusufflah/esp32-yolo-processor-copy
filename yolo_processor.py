@@ -15,7 +15,7 @@ SUPABASE_URL = os.environ.get("SUPABASE_URL")
 SUPABASE_KEY = os.environ.get("SUPABASE_SERVICE_KEY")  # Use service key for write access
 supabase: Client = create_client(SUPABASE_URL, SUPABASE_KEY)
 
-MODEL_URL = "https://github.com/ultralytics/yolov5/releases/download/v7.0/yolov5n.pt"
+MODEL_PATH = 'best.pt'
 # Load YOLO model
 model = YOLO(MODEL_URL)  # Model standar
 
