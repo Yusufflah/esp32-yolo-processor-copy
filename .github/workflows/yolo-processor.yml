@@ -1,16 +1,9 @@
 name: YOLO Image Processor
 
 on:
-  repository_dispatch:
-    types: [trigger-yolo-processing]
-  workflow_dispatch:
-    inputs:
-      image_url:
-        description: 'Image URL to process'
-        required: true
-      filename:
-        description: 'Filename'
-        required: true
+  schedule:
+    - cron: '*/5 * * * *'  # Run every 5 minutes
+  workflow_dispatch:  # Manual trigger
 
 env:
   SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
