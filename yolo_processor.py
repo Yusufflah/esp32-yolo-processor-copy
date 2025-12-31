@@ -15,7 +15,7 @@ SUPABASE_URL = os.environ.get("SUPABASE_URL")
 SUPABASE_KEY = os.environ.get("SUPABASE_SERVICE_KEY")  # Use service key for write access
 supabase: Client = create_client(SUPABASE_URL, SUPABASE_KEY)
 
-MODEL_PATH = 'yolov5n.pt'
+MODEL_PATH = 'best.pt'
 # Load YOLO model
 model = YOLO(MODEL_PATH)  # Model standar
 
