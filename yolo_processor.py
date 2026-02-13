@@ -242,7 +242,7 @@ def process_single_image(record, process_failed=False):
             # Buat caption singkat
             classes = list(set(d['class'] for d in detections))
             caption = (f"🔍 *Deteksi Objek*\n"
-                       f"📸 Waktu jepret: {capture_time}\n"
+                       f"📸 Waktu Kejadian: {capture_time}\n"
                        f"📦 Jumlah: {len(detections)}\n"
                        f"🏷️ Kelas: {', '.join(classes)}\n"
                        f"🆔 File: {filename}")
