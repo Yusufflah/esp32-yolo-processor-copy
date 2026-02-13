@@ -241,10 +241,10 @@ def process_single_image(record, process_failed=False):
 
             # Buat caption singkat
             classes = list(set(d['class'] for d in detections))
-            caption = (f"🔍 *Deteksi Objek*\n"
+            caption = (f"🔍 Objek Terdeteksi\n"
                        f"📸 Waktu Kejadian: {capture_time}\n"
-                       f"📦 Jumlah: {len(detections)}\n"
-                       f"🏷️ Kelas: {', '.join(classes)}\n"
+                       f"📦 Jumlah: {len(detections)} Orang\n"
+                       # f"🏷️ Kelas: {', '.join(classes)}\n"
                        f"🆔 File: {filename}")
             send_telegram_photo(img_bytes, caption)
         else:
