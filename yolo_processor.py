@@ -74,7 +74,6 @@ def send_telegram_photo(photo_bytes: io.BytesIO, caption: str) -> bool:
 
 # ==================== FUNGSI UTAMA (tidak banyak berubah) ====================
 def download_image(image_url):
-    # ... (tetap sama seperti kode asli)
     try:
         response = requests.get(image_url)
         response.raise_for_status()
@@ -84,7 +83,6 @@ def download_image(image_url):
         return None
 
 def process_image_with_yolo(image, target_class='person'):
-    # ... (tetap sama)
     try:
         opencv_image = cv2.cvtColor(np.array(image), cv2.COLOR_RGB2BGR)
         results = model(opencv_image)
@@ -110,7 +108,6 @@ def process_image_with_yolo(image, target_class='person'):
         return None, []
 
 def upload_processed_image(image, filename):
-    # ... (tetap sama)
     try:
         img_byte_arr = io.BytesIO()
         image.save(img_byte_arr, format='JPEG', quality=85)
@@ -130,7 +127,6 @@ def upload_processed_image(image, filename):
 def update_processing_status(record_id, status, processed_image_url=None,
                            processing_result=None, error_message=None,
                            processing_time=None, retry_count=None, last_error=None):
-    # ... (tetap sama)
     try:
         update_data = {
             "status": status,
@@ -164,7 +160,6 @@ def update_processing_status(record_id, status, processed_image_url=None,
         return False
 
 def should_retry_failed_image(record):
-    # ... (tetap sama)
     retry_count = record.get('retry_count', 0)
     last_error_time = record.get('updated_at')
 
@@ -271,7 +266,6 @@ def process_single_image(record, process_failed=False):
         return False
 
 def process_pending_images():
-    # ... (tetap sama)
     try:
         response = supabase.table("yolo_processing").select("*").eq("status", "pending").execute()
         if hasattr(response, 'error') and response.error:
@@ -288,7 +282,6 @@ def process_pending_images():
         print(f"Error in process_pending_images: {e}")
 
 def retry_failed_images():
-    # ... (tetap sama)
     try:
         response = supabase.table("yolo_processing").select("*").eq("status", "failed").execute()
         if hasattr(response, 'error') and response.error:
@@ -310,7 +303,6 @@ def retry_failed_images():
         print(f"Error in retry_failed_images: {e}")
 
 def process_all_images():
-    # ... (tetap sama)
     print("\n" + "="*50)
     print("Processing PENDING images...")
     print("="*50)
@@ -321,7 +313,6 @@ def process_all_images():
     retry_failed_images()
 
 def cleanup_old_failures():
-    # ... (tetap sama)
     try:
         cutoff_time = datetime.now() - timedelta(days=7)
         cutoff_time_str = cutoff_time.isoformat()
